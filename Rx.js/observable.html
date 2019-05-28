@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>learnRx.js</title>
+    <script src="./rxjs.min.js"></script>
+</head>
+<body>
+    <button id="btn">按钮</button>
+</body>
+<script >
+window.onload = ()=>{
+    console.log(rxjs);
+    // https://www.imooc.com/article/70323
+    // 创建 Observable 的方法、types、schedulers 和一些工具方法
+    const { Observable, Subject, asapScheduler, range, pipe, of, from, interval, merge, fromEvent, SubscriptionLike, PartialObserver } = rxjs;
+    // 操作符 operators
+    const { map, filter, scan, take } = rxjs.operators;
+    // webSocket
+    const { webSocket } = rxjs.webSocket;
+    // ajax
+    const { ajax } = rxjs.ajax;
+    // 测试
+    const { TestScheduler } = rxjs.testing;
+    
+    // take操作符 可操作次数
+    click$ = fromEvent(btn,'click');
+    click$.pipe(take(2)).subscribe(e => {
+        console.log('只可以点击一次')
+        // btn.setAttribute('disabled','')
+    })
+
+    // range 从 x 到 x 
+    range(1, 10).pipe(
+        filter(x => x % 2 === 1),
+        map(x => x + x)
+    ).subscribe(x => console.log(x));
+
+    // 创建Observable 同步
+    const source$ = new Observable(observer=>{
+        observer.next(1);
+        observer.next(2);
+        observer.next(3);
+    });
+    const observer = {
+        next: item => console.log(item),
+    };
+    console.error('start =====> Observable同步');
+    source$.subscribe(observer);
+    console.error('end');
+
+    // 创建Observable 异步
+    const source2$ = new Observable(observer=>{
+        setTimeout(()=>{
+            observer.next(1)
+        },1000);
+        setTimeout(()=>{
+            observer.next(2)
+        },2000);
+        setTimeout(()=>{
+            observer.next(3)
+        },3000);
+    });
+    const observer2 = {
+        next: item => {console.log(item); if(item >= 3){console.error('=====> Observable异步执行完毕');}}
+    };
+    console.error('start =====> Observable异步开始');
+    source2$.subscribe(observer2);
+    console.error('end =====> Observable异步');
+
+    // Observable 参数 observer.complete
+    const source3$ = new Observable(observer=>{
+        observer.next(1);
+        observer.next(2);
+        observer.complete(); // 以下不会执行
+        observer.next(3);
+    });
+    const observer3 = {
+        next: item => console.log(item),
+        complete: ()=>{ console.error("complete!") }
+    };
+    console.error('start =====> Observable.observer.complete');
+    source3$.subscribe(observer3);
+    console.error('end');
+
+    // Observable.subscribe(observer).unsubscribe() 退订
+    const source4$ = new Observable(observer=>{
+        let num = 1;
+        setInterval(()=>{
+            observer.next(num++)
+        },1000);
+    });
+    // const observer4 = {
+    //     next: item => console.log(item)
+    // };
+    console.error('start =====> Observable退订');
+    let unsubscribe = source4$.subscribe(item=>{console.log(item)});
+    setTimeout(()=>{unsubscribe.unsubscribe();console.error('end =====> Observable退订');},10000);
+    
+}
+</script>
+</html>

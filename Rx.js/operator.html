@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>learnRx.js</title>
+    <script src="./rxjs.min.js"></script>
+</head>
+<body>
+    <button id="btn">按钮</button>
+</body>
+<script >
+window.onload = ()=>{
+    console.log(rxjs);
+    // 创建 Observable 的方法、types、schedulers 和一些工具方法
+    const { Observable, Subject, asapScheduler, range, timer, pipe, of, from, interval, merge, fromEvent, SubscriptionLike, PartialObserver } = rxjs;
+    // 操作符 operators
+    const { map, filter, scan, take } = rxjs.operators;
+    // webSocket
+    const { webSocket } = rxjs.webSocket;
+    // ajax
+    const { ajax } = rxjs.ajax;
+    // 测试
+    const { TestScheduler } = rxjs.testing;
+    
+    // 操作符 操作符是用来处理数据流
+
+
+
+
+
+}
+</script>
+</html>

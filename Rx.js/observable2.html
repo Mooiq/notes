@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>learnRx.js</title>
+    <script src="./rxjs.min.js"></script>
+</head>
+<body>
+    <button id="btn">按钮</button>
+</body>
+<script >
+window.onload = ()=>{
+    console.log(rxjs);
+    // 创建 Observable 的方法、types、schedulers 和一些工具方法
+    const { Observable, Subject, asapScheduler, range, timer, pipe, of, from, interval, merge, fromEvent, SubscriptionLike, PartialObserver } = rxjs;
+    // 操作符 operators
+    const { map, filter, scan, take } = rxjs.operators;
+    // webSocket
+    const { webSocket } = rxjs.webSocket;
+    // ajax
+    const { ajax } = rxjs.ajax;
+    // 测试
+    const { TestScheduler } = rxjs.testing;
+   
+    // interval 方法
+    // interval(1000)每秒发出一个从0开始递增加1的数据
+    const source$ = interval(1000).pipe(
+        map(x => x*x)
+    );
+    let $source = source$.subscribe(x=>{console.log("interval() 方法",x)});
+    setTimeout(()=>{$source.unsubscribe()},5000);
+
+    // timer 方法 跟interval差不多 可以接收两个参数，第一个参数为发出第一个值需要等待的时间，第二个参数为之后的间隔时间。第一个参数可以是数字，也可以是一个 Date 对象，第二个参数可省。
+    const timer$ = timer(1000,2000).subscribe(item=>{console.error("timer 方法",item)})
+    setTimeout(()=>{timer$.unsubscribe()},8000);
+
+
+    // of 方法
+    /*
+    之前我们写的这种形式：
+    const source$ = new Observable(observer => {
+        observer.next(1)
+        observer.next(2)
+        observer.next(3)
+        observer.complete()
+    })
+
+    使用 of 方法将会非常简洁：
+    import {of} from 'rxjs'const source$ = of(1, 2, 3)
+    */
+    const source$2 = of(1,2,3).subscribe(item=>{console.error("of() 方法",item)});
+
+    // from 方法
+    /*
+        from 可以将可遍历的对象（iterable）转化为一个 Observable，字符串也部署有 iterator 接口，所以也支持。
+    */
+    const source$3 = from([...new Set([1,2,2,2,3,4])]).subscribe(item=>{console.warn("from() 方法",item)});
+
+    // defer 方法
+    /*
+    defer 创建的 Observable 只有在订阅时才会去创建我们真正想要操作的 Observable。defer 延迟了创建 Observable，而又有一个 Observable 方便我们去订阅，这样也就推迟了占用资源。
+        defer(() => ajax(ajaxUrl))
+        只有订阅了才会去发送 ajax 请求。
+    */
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+</script>
+</html>
