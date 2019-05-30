@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>matrixChange</title>
+    <script src="./matrixChange.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+</head>
+<body>
+    <!-- 在掘金上看到的挺有意思，拿来学习 备用 -->
+    <!-- 掘金作者: undefined_er -->
+    <!-- github: https://github.com/acccco/matrixChange -->
+    <div id="app" style="width: 500px;height:500px;background:#ccc;"></div>
+    
+</body>
+<script>
+    window.onload = ()=>{
+        var app = document.getElementById('app')
+        var urls = [
+        'http://bgcdn.acohome.cn/100965.jpg',
+        'http://bgcdn.acohome.cn/1501505.jpg',
+        'http://bgcdn.acohome.cn/1501655.jpg'
+        ];
+
+        // 该方法返回一个对象
+        var move = mChange.makeMatrixChange(app, {
+            images: urls,
+            row: 7,
+            col: 9
+        })
+
+        // 使用默认的动画效果
+        // move.movePoint(mChange.mode[0])
+
+        // 使用 transition 过渡，提供类名即可，eg: .test{transfrom:scale(0);}
+        // move.movePoint(mChange.mode[0], {
+        //     className: 'test'
+        // })
+
+        // 使用 animation 动画，比如配合 animation.css 动画库
+        // animation 需要提供两个类名，进场动画和出场动画，同时需要标记这个是 animation 动画
+        move.movePoint(mChange.mode[0], {
+            animate: true,
+            classNameIn: 'animated flipInX',
+            classNameOut: 'animated flipOutX'
+        })
+
+        // 使用特定的图片进行动画
+        // 不传 image 则随机取传入的图片列表中的一张图片
+        // move.movePoint(mChange.mode[0], {
+        //     animate: true,
+        //     classNameIn: 'animated flipInX',
+        //     classNameOut: 'animated flipOutX',
+        //     image: urls[0]
+        // })
+    }
+</script>
+</html>
