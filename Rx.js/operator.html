@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>learnRx.js</title>
-    <script src="./rxjs.min.js"></script>
+    <script src="./rxjs@6.5.2.min.js"></script>
 </head>
 <body>
     <button id="btn">按钮</button>
@@ -17,7 +17,7 @@ window.onload = ()=>{
     // 创建 Observable 的方法、types、schedulers 和一些工具方法
     const { Observable, Subject, asapScheduler, range, timer, pipe, of, from, interval, merge, fromEvent, SubscriptionLike, PartialObserver } = rxjs;
     // 操作符 operators
-    const { map, filter, scan, take } = rxjs.operators;
+    const { map, skip, skipLast, mapTo, filter, takeUntil, first, last, scan, take, takeLast, min, max } = rxjs.operators;
     // webSocket
     const { webSocket } = rxjs.webSocket;
     // ajax
@@ -26,9 +26,79 @@ window.onload = ()=>{
     const { TestScheduler } = rxjs.testing;
     
     // 操作符 操作符是用来处理数据流
+    const source$ = of(1,2,3)
+    .pipe(
+        filter(x => x>1),
+        map(x => x*x)
+    )
+    .subscribe(item=>console.error(item));
 
+    // scan
+    const source2$ = of(1,2,3,5,6)
+    .pipe(
+        scan((pre,cur)=>pre+cur,0)
+    )
+    .subscribe(item=>console.error(item));
 
+    // mapTo
+    const source3$ = of(1,2,3)
+    .pipe(
+        mapTo("不管来什么值，我都发出这句话！")
+    )
+    .subscribe(item=>console.warn(item));
 
+    //  一些过滤的操作符
+
+    // take 是从数据流中选取最先发出的若干数据
+    const source4$ = of(1,2,3,4,5,6)
+    .pipe(
+        take(2)
+    )
+    .subscribe(item=>console.error('take===>',item));
+
+    // takeLast 是从数据流中选取最后发出的若干数据
+    const source5$ = of(1,2,3,4,5,6)
+    .pipe(
+        takeLast(2)
+    )
+    .subscribe(item=>console.error('takeLast===>',item));
+
+    // takeUntil 是从数据流中选取直到发生某种情况前发出的若干数据
+    const until$ = fromEvent(btn,'click');
+    const source6$ = interval(1000)
+    .pipe(
+        takeUntil(until$)
+    )
+    .subscribe(item=>console.error('takeUntil===>点击按钮停止',item));
+
+    // first 是获得满足判断条件的第一个数据
+    const source7$ = of(1,2,3,4,5,6)
+    .pipe(
+        first(x=>x>1)
+    )
+    .subscribe(item=>console.log('first===>',item));
+
+    // last 是获得满足判断条件的最后一个数据
+    const source8$ = of(1,2,3,4,5,6)
+    .pipe(
+        last(x=>x>1)
+    )
+    .subscribe(item=>console.log('last===>',item));
+
+    // skip 是从数据流中忽略最先发出的若干数据
+    // public skip(count: Number): Observable
+    const source9$ = of(1,2,3,4,5,6)
+    .pipe(
+        skip(4)
+    )
+    .subscribe(item=>console.warn('skip===>',item));
+
+    // skipLast 是从数据流中忽略最后发出的若干数据
+    const source10$ = of(1,2,3,4,5,6)
+    .pipe(
+        skipLast(4)
+    )
+    .subscribe(item=>console.log('skipLast===>',item));
 
 
 }
