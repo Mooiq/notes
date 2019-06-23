@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>test Object.defineProperty</title>
+</head>
+<body>
+    <h1 id="name">{{name}}</h1>
+</body>
+<script>
+    window.onload = () => {
+    
+    // 观察者
+        function observe(data){
+            if(!data || typeof data !== 'object') return;
+            Object.keys(data).forEach(item=>{
+                defineReactive(data,item,data[item]);
+            })
+        }
+
+        function defineReactive(data,key,val){
+            observe(val); // 递归遍历
+            var dep = new Dep(); // 给该属性添加订阅者管理数组
+            Object.defineProperty(data,key,{
+                enumerable: true,
+                configurable: true,
+                set: function(newVal){
+                    let olderVal = val;
+                    val = newVal;
+                    console.log(`属性${key}已经被监听了，变化值为:${olderVal}--->${newVal}`);
+                    dep.notify(); // 数据发生变化通知所有订阅者
+                },
+                get:function(){
+                    if (Dep.target) {
+                        // 好多时候我们只是用到vue.data里的值做临时变量、并不是data中每个值都会在视图层绑定或者监听来完成某些操作
+                        // 所以这里做了判断，只有在视图层或需要监听的变量才会给它添加订阅者
+                        // 
+                        dep.add(Dep.target); // 添加订阅者
+                    }
+                    return val;
+                }
+            })
+        }
+
+        function Dep(){
+            this.subs = [];
+        }
+
+        Dep.prototype = {
+            add: function(sub){
+                this.subs.push(sub);
+            },
+            notify: function(){
+                this.subs.forEach(sub=>{
+                    sub.update();
+                })
+            }
+        }
+
+        Dep.target = null;
+    
+    // 订阅者
+        // 参数： 全局对象、要观察字段、回调函数
+        function Watcher(vm,exp,cb){
+            this.vm = vm;
+            this.exp  = exp;
+            this.cb = cb;
+            this.value = this.get();
+        }
+        Watcher.prototype = {
+            run: function(){
+                this.update()
+            },
+            update: function(){
+                let newVal = this.vm.data[this.exp];
+                if (this.value === newVal ) {
+                    return
+                }
+                this.value = newVal;
+                this.cb.call(this.vm,newVal)
+            },
+            get: function(){
+                Dep.target = this;
+                let val = this.vm.data[this.exp];
+                Dep.target = null;
+                return val;
+            }
+        }
+    
+    // 结合Observe和Watcher
+        function SelfVue(data,el,exp){
+            this.data = data;
+            observe(data);
+            Proxy(data,this);
+            el.innerHTML = this.data[exp];  // 初始化模板数据的值
+            new Watcher(this, exp, function (value) {
+                el.innerHTML = value;
+            });
+            return this;
+        }
+    
+    // 代理 selfVue.data.name ---> selfVue.name
+        function Proxy(data,vm){
+            if(!data || typeof data !== 'object') return;
+            Object.keys(data).forEach(key=>{
+                Object.defineProperty(vm,key,{
+                    enumerable: true,
+                    configurable: true,
+                    get: function(){
+                        return vm.data[key]
+                    },
+                    set: function(val){
+                        vm.data[key] = val;
+                    }
+                })
+            })
+        }
+
+    // 试验
+        var ele = document.querySelector('#name');
+        var selfVue = new SelfVue({name: 'hello world'}, ele, 'name');
+        setTimeout(()=>{
+            selfVue.name = '你好！世界！';
+        },2000)
+
+
+
+
+
+
+
+
+
+
+    // 过程测试
+
+        let music = {
+            name: 'ilike',
+            detail: {
+                one: '云烟成雨',
+                two: '不能说的秘密'
+            }
+        }
+
+        observe(music);
+        music.name = '我新欢的音乐';
+        music.detail.two = '淡水海边';
+    }
+</script>
+</html>
