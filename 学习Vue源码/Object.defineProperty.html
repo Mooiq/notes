@@ -127,7 +127,200 @@
 
 
 
+    // 编译器 Compile
+        function Compile(el, vm){
+            this.$vm = vm;
+            this.$el = this.isElementNode(el) ? el : document.querySelector(el);
 
+            if(this.$el){
+                this.$fragment = this.node2Fragment(this.$el); // 拷贝节点
+                this.init(); // 处理节点
+                this.$el.appendChild(this.$fragment); // 将处理完的节点插入dom
+            }
+        }
+
+        Compile.prototype = {
+            node2Fragment: function(el){
+                var fragment = document.createDocumentFragment(),
+                    child;
+                
+                // 将原生节点拷贝到fragment
+                while (child = el.firstChild) {
+                    fragment.appendChild(child);
+                }
+
+                return fragment;
+            },
+
+            init: function(){
+                this.compileElement(this.$fragment);
+            },
+
+            // 
+            compileElement: function(el){
+                var childNodes = el.childNodes, // fragment 中所有子节点即为原dom树复制节点
+                    me = this;
+
+                // 转成数组
+                [].slice.call(childNodes).forEach(function(node){
+                    var text = node.textContent;
+                    var reg = /\{\{(.*)\}\}/;
+
+                    // 如果是 ELEMENT_NODE
+                    if (me.isElementNode(node)){
+                        me.compile(node);
+                    }
+
+                    // 如果是 TEXT_NODE 
+                    if (me.isTextNode(node) && reg.test(text)){
+                        me.compileText(node,RegExp.$1.trim()); // 获取{{}}中字符串去掉空格 编译
+                    }
+
+                    // 如果有子节点 递归
+                    if(node.childNodes && node.childNodes.length){
+                        me.compileElement(node);
+                    }
+
+                })
+            },
+            
+            compile: function(node){
+                var nodeAttrs = node.attributs,
+                    me = this;
+                [].slice.call(nodeAttrs).forEach(function(attr){
+                    var attrName = attr.name;
+                    if(me.isDirective(attrName)){
+                        var exp = attr.value;
+                        var dir = attrName.substring(2); // 截掉前两位 比如 v-on ，那么获取 on
+                        // 事件指令
+                        if(me.isEventDirective(dir)){
+                            me.compileUtil.eventHandler(node, me.$vm, exp, dir);
+                        } else { 
+                            // 普通指令
+                            me.compileUtil[dir] && me.compileUtil[dir](node, me.$vm, exp);
+                        }
+
+                        node.removeAttribute(attrName); // 处理完之后删除掉该属性
+                    }
+                });
+            },
+
+            isElementNode: function(node){
+                return node.nodeType == 1;
+            },
+
+            isTextNode: function(node){
+                return node.nodeType == 3;
+            },
+
+            isDirective: function(attr){
+                return attr.indexOf('v-') == 0;
+            },
+
+            isEventDirective: function(dir){
+                return dir.indexOf('on') == 0;
+            },
+
+            compileText: function(node, exp){
+                this.compileUtil.text(node, this.$vm, exp);
+            }
+            
+        }
+
+        // 指令处理集合
+            compileUtil = {
+                text: function(node, vm, exp){
+                    this.bind(node, vm, exp, 'text');
+                },
+
+                html: function(node, vm, exp){
+                    this.bind(node, vm, exp, 'html');
+                },
+
+                model: function(node, vm, exp){
+                    this.bind(node, vm, exp, 'model');
+                    var me = this,
+                        val = this._getVMVal(vm, exp);
+                    node.addEventListener('input',function(e){
+                        var newVal = e.target.value;
+                        if(val === newVal){
+                            return
+                        }
+                        
+                        me._setVMVal(vm, exp, newValue);
+                        val = newValue;
+                    })
+                },
+
+                class: function(node, vm, exp){
+                    this.bind(node, vm, exp, 'class');
+                },
+
+                bind: function(node, vm, exp, dir){
+                    var updaterFn = updater[dir + 'Updater'];
+
+                    updaterFn && updaterFn(node, this._getVMVal(vm, exp));
+
+                    new Watcher(vm, exp, function(value, oldValue){
+                        updaterFn && updaterFn(node, value, oldValue);
+                    });
+                },
+
+                // 事件处理
+                eventHandler: function(node, vm, exp, dir){
+                    var evenType = dir.split(':')[1],
+                        // 查找 vue.methods 中自己写的方法
+                        fn = vm.$options.methods && vm.$options.methods[exp]; 
+                    
+                    if(evenType && fn){
+                        node.addEventListener(evenType, fn.bind(vm), false);
+                    }
+                },
+
+                _getVMVal: function(vm, exp){
+                    var val = vm;
+                    exp = exp.split('.');
+                    exp.forEach(function(k){
+                        val = val[k];
+                    });
+                    return val;
+                },
+
+                _setVMVal: function(vm, exp, value){
+                    var val = vm;
+                    exp = exp.split('.');
+                    exp.forEach(function(k,i){
+                        // 确保更新的是最后一个子对象上的key
+                        if(i < exp.length -1){
+                            val = val[k];
+                        } else {
+                            val[k] = value;
+                        }
+                    })
+                }
+
+            };
+
+            var updater = {
+                textUpdater: function(node, value){
+                    node.textContent = typeof value == 'undefined' ? '' : value;
+                },
+
+                htmlUpdater: function(node, value){
+                    node.innerHTML = typeof value == 'undefined' ? '' : value;
+                },
+
+                classUpdater: function(node, value, oldValue){
+                    var className = node.className;
+                    className = className.replace(oldValue, '').replace(/\s$/,'');
+                    var space = className && String(value) ? ' ' : '';
+                    node.className = className + space + value;
+                },
+
+                modelUpdater: function(node, value, oldValue){
+                    node.value = typeof value == 'undefined' ? '' : value;
+                }
+            }
 
 
 
