@@ -8,6 +8,12 @@
 </head>
 <body>
     <h1 id="name">{{name}}</h1>
+    <div id="mvvm-app">
+        <input type="text" v-model="word">
+        <p>{{word}}</p>
+        <button v-on:click="sayHi">change model</button>
+    </div>
+        
 </body>
 <script>
     window.onload = () => {
@@ -89,22 +95,12 @@
             }
         }
     
-    // 结合Observe和Watcher
-        function SelfVue(data,el,exp){
-            this.data = data;
-            observe(data);
-            Proxy(data,this);
-            el.innerHTML = this.data[exp];  // 初始化模板数据的值
-            new Watcher(this, exp, function (value) {
-                el.innerHTML = value;
-            });
-            return this;
-        }
     
     // 代理 selfVue.data.name ---> selfVue.name
         function Proxy(data,vm){
             if(!data || typeof data !== 'object') return;
             Object.keys(data).forEach(key=>{
+                console.warn('代理字段：', key);
                 Object.defineProperty(vm,key,{
                     enumerable: true,
                     configurable: true,
@@ -117,15 +113,6 @@
                 })
             })
         }
-
-    // 试验
-        var ele = document.querySelector('#name');
-        var selfVue = new SelfVue({name: 'hello world'}, ele, 'name');
-        setTimeout(()=>{
-            selfVue.name = '你好！世界！';
-        },2000)
-
-
 
     // 编译器 Compile
         function Compile(el, vm){
@@ -185,19 +172,21 @@
             },
             
             compile: function(node){
-                var nodeAttrs = node.attributs,
+                var nodeAttrs = node.attributes,
                     me = this;
+                console.error(nodeAttrs);
                 [].slice.call(nodeAttrs).forEach(function(attr){
+                    console.warn('nodeAttrs: ',attr);
                     var attrName = attr.name;
                     if(me.isDirective(attrName)){
                         var exp = attr.value;
                         var dir = attrName.substring(2); // 截掉前两位 比如 v-on ，那么获取 on
                         // 事件指令
                         if(me.isEventDirective(dir)){
-                            me.compileUtil.eventHandler(node, me.$vm, exp, dir);
+                            compileUtil.eventHandler(node, me.$vm, exp, dir);
                         } else { 
                             // 普通指令
-                            me.compileUtil[dir] && me.compileUtil[dir](node, me.$vm, exp);
+                            compileUtil[dir] && compileUtil[dir](node, me.$vm, exp);
                         }
 
                         node.removeAttribute(attrName); // 处理完之后删除掉该属性
@@ -222,13 +211,13 @@
             },
 
             compileText: function(node, exp){
-                this.compileUtil.text(node, this.$vm, exp);
+                compileUtil.text(node, this.$vm, exp);
             }
             
         }
 
         // 指令处理集合
-            compileUtil = {
+            var compileUtil = {
                 text: function(node, vm, exp){
                     this.bind(node, vm, exp, 'text');
                 },
@@ -242,8 +231,9 @@
                     var me = this,
                         val = this._getVMVal(vm, exp);
                     node.addEventListener('input',function(e){
-                        var newVal = e.target.value;
-                        if(val === newVal){
+                        console.error(e)
+                        var newValue = e.target.value;
+                        if(val === newValue){
                             return
                         }
                         
@@ -340,6 +330,50 @@
         observe(music);
         music.name = '我新欢的音乐';
         music.detail.two = '淡水海边';
+    
+
+    // 结合Observe和Watcher
+        function SelfVue(data,el,exp){
+            this.data = data;
+            observe(data);
+            Proxy(data,this);
+            el.innerHTML = this.data[exp];  // 初始化模板数据的值
+            new Watcher(this, exp, function (value) {
+                el.innerHTML = value;
+            });
+            return this;
+        }
+
+    // 没添加compile 试验
+        var ele = document.querySelector('#name');
+        var selfVue = new SelfVue({name: 'hello world'}, ele, 'name');
+        setTimeout(()=>{
+            selfVue.name = '你好！世界！';
+        },2000)
+
+    // 完整的 mvvm 
+    function MVVM(options) {
+        this.$options = options;
+        var data = this.data = this.$options.data;
+        observe(data, this);
+        Proxy(data,this);
+        this.$compile = new Compile(options.el || document.body, this)
     }
+
+    var vm = new MVVM({
+        el: '#mvvm-app',
+        data: {
+            word: 'Hello World!'
+        },
+        methods: {
+            sayHi: function() {
+                this.word = 'Hi, everybody!';
+            }
+        }
+    });
+
+
+    }
+
 </script>
 </html>
